@@ -35,3 +35,22 @@ print("Loadings:\n", loadings)
 print("Explained Variance:\n", explained_variance)
 print("Components:\n", components)
 ```
+
+### construct_RDM
+For IS-RSA. Construct the Representational Dissimilarity Matrix(RDM) from the data.
+
+Usage:
+
+```python
+construct_RDM(data, n_target, method = "cityblock")
+```
+
+### do_rsa
+
+Calculate the Spearman correlation between two RDMs(lower triangle) and do permutation
+
+Usage:
+
+```python        
+do_RSA(rdm1, rdm2, n_perm=1000)
+```
