@@ -40,3 +40,86 @@ def perform_pca(data, n_components):
     explained_variance = pca.explained_variance_ratio_
 
     return loadings, explained_variance, components
+
+# scree plot
+def scree_plot(explained_variance, n_components):
+    """
+    Create a scree plot of explained variance.
+
+    Args:
+        explained_variance: array, explained variance ratio of the components.
+        n_components: int, number of principal components.
+    """
+    plt.plot(np.arange(1, n_components + 1), explained_variance, 'o-', color='black')
+    plt.xlabel('Number of components')
+    plt.ylabel('Explained variance')
+    plt.title('Scree plot')
+    plt.grid()
+    plt.show()
+
+def create_scree_plot(data, max_components):
+    # fit PCA with n_components = number of vars
+    loadings, explained_variance, components = perform_pca(data, max_components)
+    scree_plot(explained_variance, max_components)
+
+def pc_plot(loadings, df):
+    """
+    Create a plot to visualize the PCA loadings.
+
+    Inputs:
+    - loadings: np.ndarray, the PCA loadings.
+    - df: pd.DataFrame, the original data.
+    """
+
+    # Create a DataFrame for PCA loadings
+    loading_df = pd.DataFrame(loadings, 
+                            columns=[f"PC{i+1}" for i in range(loadings.shape[1])], 
+                            index=df.columns)
+
+    # Convert to long format for easier plotting
+    loading_long = loading_df.reset_index().melt(id_vars="index", 
+                                                    var_name="Principal Component", 
+                                                    value_name="Loading Strength")
+    loading_long.rename(columns={"index": "Trait"}, inplace=True)
+
+    # Set up the plot
+    sns.set(style="whitegrid")
+    n_components = loading_df.shape[1]
+    fig, axes = plt.subplots(1, n_components, figsize=(15, 6), sharey=True)
+
+    # Create a consistent color palette for the normalized strength
+    norm = plt.Normalize(loading_long['Loading Strength'].min(), loading_long['Loading Strength'].max())
+    cmap = plt.cm.coolwarm
+
+    # Revised plotting loop
+    for i, ax in enumerate(axes):
+        pc = f"PC{i+1}"
+        pc_data = loading_long[loading_long["Principal Component"] == pc]
+        
+        # Plot the bars without applying colors yet
+        barplot = sns.barplot(
+            data=pc_data,
+            x="Loading Strength",
+            y="Trait",
+            ax=ax
+        )
+        
+        # Apply custom colors to each bar based on normalized strength
+        for j, bar in enumerate(barplot.patches):
+            strength = pc_data.iloc[j]['Loading Strength']
+            bar.set_color(cmap(norm(strength)))
+        
+        ax.set_title(pc, fontsize=20)  # Larger title font size
+        ax.tick_params(axis='x', labelsize=16)  # Larger x-tick label size
+        ax.tick_params(axis='y', labelsize=16)  # Larger y-tick label size
+        
+        # Adjust x and y labels directly
+        ax.set_xlabel("Loading Strength", fontsize=18)  # Set x-axis label with font size
+        ax.set_ylabel("Traits", fontsize=18)            # Set y-axis label with font size
+
+    # Add a color bar for the shared color scale
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    fig.colorbar(sm, ax=axes, orientation='vertical', fraction=0.05, pad=0.1, label='Loading Strength')
+
+    
