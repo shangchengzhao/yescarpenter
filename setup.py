@@ -10,7 +10,7 @@ setup(
     description="A library providing frequently used functions in data analysis for YESlab members and other researchers",
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    url="https://github.com/yourusername/yescarpenter",  # update with your repo URL
+    url="https://github.com/shangchengzhao/yescarpenter.git",  # update with your repo URL
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",

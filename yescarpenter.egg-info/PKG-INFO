@@ -1,0 +1,21 @@
+Metadata-Version: 2.1
+Name: yescarpenter
+Version: 0.1.0
+Summary: A library providing frequently used functions in data analysis for YESlab members and other researchers
+Home-page: https://github.com/shangchengzhao/yescarpenter.git
+Author: Shangcheng Zhao
+Author-email: shangchengzhao@gmail.com
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: pandas
+Requires-Dist: numpy
+Requires-Dist: scikit-learn
+Requires-Dist: matplotlib
+Requires-Dist: seaborn
+
+# yescarpenter
+This library provides some frequent used functions for YESlab members and other researchers, including data processing and analyses
