@@ -122,4 +122,6 @@ def pc_plot(loadings, df):
     sm.set_array([])
     fig.colorbar(sm, ax=axes, orientation='vertical', fraction=0.05, pad=0.1, label='Loading Strength')
 
+    plt.show()
+
     

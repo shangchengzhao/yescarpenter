@@ -2,6 +2,7 @@ LICENSE
 README.md
 setup.py
 tests/test_yescarpenter.py
+yescarpenter/IS_RSA.py
 yescarpenter/__init__.py
 yescarpenter/pca.py
 yescarpenter.egg-info/PKG-INFO

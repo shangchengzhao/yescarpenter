@@ -36,6 +36,21 @@ print("Explained Variance:\n", explained_variance)
 print("Components:\n", components)
 ```
 
+### create_scree_plot
+
+This function creates a scree plot to visualize the explained variance of each principal component.
+
+```python
+scree_plot(explained_variance, n_components)
+```
+
+### pc_plot
+Create a plot to visualize the PCA loadings.
+
+```python
+pc_plot(loadings, df)
+```
+
 ### construct_RDM
 For IS-RSA. Construct the Representational Dissimilarity Matrix(RDM) from the data.
 
