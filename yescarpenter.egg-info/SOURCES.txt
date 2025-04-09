@@ -4,7 +4,9 @@ setup.py
 tests/test_yescarpenter.py
 yescarpenter/IS_RSA.py
 yescarpenter/__init__.py
+yescarpenter/df_average.py
 yescarpenter/pca.py
+yescarpenter/ttest.py
 yescarpenter.egg-info/PKG-INFO
 yescarpenter.egg-info/SOURCES.txt
 yescarpenter.egg-info/dependency_links.txt
