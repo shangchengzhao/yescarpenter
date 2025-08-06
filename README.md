@@ -60,17 +60,54 @@ Usage:
 construct_RDM(data, n_target, method = "cityblock")
 ```
 
-- `data`: The input data for RDM construction.
-- `method`: cityblock, or spearman
+Input:
+
+- data: n x m matrix, where n is the number of target and m is the number of features
+- n_target: the number of target
+- method: the method to calculate the distance matrix
+  - euclidean: Euclidean distance
+  - cityblock: Manhattan distance
+  - spearman: Spearman correlation
+
+Usage:
+```python
+# Example usage
+import numpy as np
+from yescarpenter import construct_RDM
+data = np.random.rand(10, 5)  # 10 pictures, 5 ratings
+n_target = 10
+rdm = construct_RDM(data, n_target, method = "euclidean")
+```
 
 ### do_rsa
 
-Calculate the Spearman correlation between two RDMs(lower triangle) and do permutation
+Calculate the Spearman correlation between two RDMs(upper triangle) and perform Mantel permutations.
+
+    Parameters:
+    -----------
+    matrix1 : np.ndarray
+        First distance matrix (square, symmetric).
+    matrix2 : np.ndarray
+        Second distance matrix (square, symmetric, same size as matrix1).
+    n_permutations : int
+        Number of permutations.
+    random_state : int or None
+        Random seed for reproducibility.
+
+    Returns:
+    --------
+    permuted_correlations : np.ndarray
+        Array of permuted Spearman correlation values.
+    observed_correlation : float
+        Observed Spearman correlation between original matrices.
+    p_value : float
+        P-value representing significance of the observed correlation.
+
 
 Usage:
 
-```python        
-do_RSA(rdm1, rdm2, n_perm=1000)
+```python
+do_RSA(rdm1, rdm2, n_permutations=1000, random_state=None)
 ```
 
 ### permutation_histogram
@@ -88,7 +125,6 @@ permutation_histogram(r, perm_r)
 ### maximal_permutation_test
 This fuction is used to address multiple comparison, which provides an alternative of Bonferroni correction.
 
-
 Usage:
 
 ```python
@@ -99,3 +135,20 @@ Usage:
     - iv_single: the independent variable that will be shuffled and compare across iv_multiplecomp
     - iv_multiplecomp: the independent variable that are inter-related and elicit the multiple comparison problem
     - n_perm: number of permutation
+
+### align_data
+This function is used to align different sources of data, such as visual and semantic embeddings, and behavioral rating data.
+
+Usage:
+
+```python
+aligned_cong_fec, aligned_vgg, aligned_sem = align_data(
+    {'data': cong_fec['Vote share percentage'].values, 'order': cong_fec['Image_name'].values},
+    {'data': response, 'order': vgglist['image_name'].values},
+    {'data': sememb, 'order': sem_imgname}
+)
+
+print(aligned_cong_fec.shape, aligned_vgg.shape, aligned_sem.shape)
+```
+
+- You can put as many data as you want. Each input has to be a dictionary with two keys: 'data' and 'order'.

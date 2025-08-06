@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="yescarpenter",
-    version="0.1.5",
+    version="0.3.0",
     author="Shangcheng Zhao",
     author_email="shangchengzhao@gmail.com",
     description="A library providing frequently used functions in data analysis for YESlab members and other researchers",
