@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: yescarpenter
-Version: 0.3.0
+Version: 0.3.1
 Summary: A library providing frequently used functions in data analysis for YESlab members and other researchers
 Home-page: https://github.com/shangchengzhao/yescarpenter.git
 Author: Shangcheng Zhao
@@ -86,7 +86,7 @@ For IS-RSA. Construct the Representational Dissimilarity Matrix(RDM) from the da
 Usage:
 
 ```python
-construct_RDM(data, n_target, method = "cityblock")
+construct_RDM(data, n_target, method = "cityblock", draw = True)
 ```
 
 Input:
@@ -97,6 +97,7 @@ Input:
   - euclidean: Euclidean distance
   - cityblock: Manhattan distance
   - spearman: Spearman correlation
+- draw: whether to draw the heatmap of the RDM
 
 Usage:
 ```python
@@ -150,6 +151,31 @@ permutation_histogram(r, perm_r)
 ```
 - `r`: The observed value.
 - `perm_r`: The null distribution, which consists of the iterated surrogated values
+
+### variance_partitioning
+This function performs variance partitioning analysis, which is useful for understanding how much variance in a dependent variable can be explained by one or more predictors.
+
+**def variance_partitioning(DV_rdms, rdm_dict, plot_title='RDMs Contributions', print_results=False):**
+
+    """
+    Performs regression analysis to compare the contributions of multiple RDMs to dependent variable RDMs.
+
+    Parameters:
+    -----------
+    DV_rdms : dict
+        Dictionary of dependent variable RDMs {dv_name: rdm_matrix}
+    rdm_dict : dict
+        Dictionary of predictor RDMs {rdm_name: rdm_matrix}
+    plot_title : str, default='RDMs Contributions'
+        Title for the contribution plot
+    print_results : bool, default=False
+        Whether to print detailed regression summaries
+        
+    Returns:
+    --------
+    results_df : pandas.DataFrame
+        DataFrame with R-squared results and contributions
+    """
 
 ### maximal_permutation_test
 This fuction is used to address multiple comparison, which provides an alternative of Bonferroni correction.

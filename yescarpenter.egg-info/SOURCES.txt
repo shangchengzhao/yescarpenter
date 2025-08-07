@@ -1,8 +1,8 @@
 LICENSE
 README.md
 setup.py
-tests/test_yescarpenter.py
-yescarpenter/IS_RSA.py
+tests/test_RSA.py
+yescarpenter/RSA.py
 yescarpenter/__init__.py
 yescarpenter/df_average.py
 yescarpenter/pca.py
