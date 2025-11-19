@@ -112,10 +112,12 @@ def construct_RDM(data, n_target, method = "euclidean", draw = True):
     if method == "spearman":
         if data.shape[1] < 2:
             raise ValueError("Spearman correlation requires at least 2 features (columns), but data has only 1 column.")
-        corr_matrix, _ = spearmanr(data, axis=1, nan_policy='omit')
+        corr_result, _ = spearmanr(data, axis=1, nan_policy='omit')
         # Handle case where spearmanr returns a scalar for single feature
-        if np.isscalar(corr_matrix):
+        if np.isscalar(corr_result):
             corr_matrix = np.array([[1.0]])
+        else:
+            corr_matrix = np.asarray(corr_result)  # type: ignore[arg-type]
         rdm = 1 - corr_matrix
     elif method == "cityblock":
         rdm = cdist(data, data, metric='cityblock')
@@ -205,7 +207,8 @@ def mantel_permutation(matrix1, matrix2, n_permutations=1000, random_state=None)
     vec2 = vecs['rdm2']
     print(f"rdm1: {vec1} \n rdm2: {vec2}")
 
-    observed_correlation, _ = spearmanr(vec1, vec2)
+    observed_corr_result, _ = spearmanr(vec1, vec2)
+    observed_correlation = float(observed_corr_result)  # type: ignore[arg-type]
 
     # Perform permutations
     permuted_correlations = np.zeros(n_permutations)
@@ -214,7 +217,8 @@ def mantel_permutation(matrix1, matrix2, n_permutations=1000, random_state=None)
     for i in range(n_permutations):
         permuted_matrix2 = shuffle_rdm(matrix2, random_state=random_state)
         perm_vec2 = standardize_rdms({'rdm2': permuted_matrix2})['rdm2']
-        permuted_correlations[i], _ = spearmanr(vec1, perm_vec2)
+        perm_corr, _ = spearmanr(vec1, perm_vec2)
+        permuted_correlations[i] = float(perm_corr)  # type: ignore[arg-type]
 
     # Calculate p-value
     p_value = (np.sum(permuted_correlations >= observed_correlation) + 1) / (n_permutations + 1)
@@ -317,8 +321,8 @@ def maximal_permutation_test(data, iv_single, iv_multiplecomp, n_perm = 1000, me
         rdmM_f = standardize_rdms({'rdmM': rdmM})['rdmM']
 
         # Compute the observed correlation between rdmS_f and rdmM_f.
-        r, _ = spearmanr(rdmS_f, rdmM_f)
-        observed_r[ivM] = r
+        r_result, _ = spearmanr(rdmS_f, rdmM_f)
+        observed_r[ivM] = float(r_result)  # type: ignore[arg-type]
 
     perm_r = np.zeros(n_perm)    
     for iperm in range(n_perm):
@@ -327,7 +331,8 @@ def maximal_permutation_test(data, iv_single, iv_multiplecomp, n_perm = 1000, me
 
         for ivM in iv_multiplecomp:
             # calculate the psudo correlation
-            r, _, _ = spearmanr(shuffle_rdm(rdmS_f), rdmM_f)
+            r_result, _ = spearmanr(shuffle_rdm(rdmS_f), rdmM_f)
+            r = float(r_result)  # type: ignore[arg-type]
 
             # update the max r
             if r > max_r_null:
