@@ -255,7 +255,8 @@ def do_RSA(matrix1, matrix2, n_permutations=1000, random_state=None, plot_histog
     )
 
     # draw the histogram
-    permutation_histogram(observed_correlation, permuted_correlations, p_value)
+    if plot_histogram:
+        permutation_histogram(observed_correlation, permuted_correlations, p_value)
     
     return permuted_correlations, observed_correlation, p_value
 
