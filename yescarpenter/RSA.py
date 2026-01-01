@@ -558,7 +558,7 @@ def _plot_variance_contributions(results_df, rdm_names, plot_title):
     plt.ylabel('R-squared', fontsize=16)
     plt.title(plot_title, fontsize=16)
     plt.ylim(0, results_df['Full R-squared'].max() + 0.1)
-    plt.legend()
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     
     # Remove top and right spines
     plt.gca().spines['top'].set_visible(False)
