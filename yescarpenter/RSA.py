@@ -150,7 +150,7 @@ def draw_heatmap(rdm, title = None, cmap = "viridis", cbar = True):
     plt.show()
 
 
-def shuffle_rdm(rdm, random_state=None):
+def shuffle_rdm(rdm, random_state=None, rng = None):
     """
     Shuffle the rows and columns of a square RDM to create a null distribution.
     
@@ -160,6 +160,7 @@ def shuffle_rdm(rdm, random_state=None):
         Square distance matrix (RDM).
     random_state : int or None
         Random seed for reproducibility.
+    rng: random seed generator when performing permutation
         
     Returns:
     --------
@@ -167,10 +168,10 @@ def shuffle_rdm(rdm, random_state=None):
         Shuffled RDM with the same shape as the input.
     """
     n = rdm.shape[0]
-    if random_state is not None:
-        np.random.seed(random_state)
+    if rng is None:
+        rng = np.random.default_rng(random_state)
 
-    permuted_indices = np.random.permutation(n)
+    permuted_indices = rng.permutation(n)
     shuffled_rdm = rdm[permuted_indices, :][:, permuted_indices]
     return shuffled_rdm
 
@@ -198,24 +199,21 @@ def mantel_permutation(matrix1, matrix2, n_permutations=1000, random_state=None)
     p_value : float
         P-value representing significance of the observed correlation.
     """
-    if random_state is not None:
-        np.random.seed(random_state)
 
     # Get the upper triangular indices, flatten, and standardize the matrices
     vecs = standardize_rdms({'rdm1': matrix1, 'rdm2':matrix2})
     vec1 = vecs['rdm1']
     vec2 = vecs['rdm2']
-    print(f"rdm1: {vec1} \n rdm2: {vec2}")
+    # print(f"rdm1: {vec1} \n rdm2: {vec2}")
 
     observed_corr_result, _ = spearmanr(vec1, vec2)
     observed_correlation = float(observed_corr_result)  # type: ignore[arg-type]
 
     # Perform permutations
     permuted_correlations = np.zeros(n_permutations)
-    n = matrix1.shape[0]
-
+    rng = np.random.default_rng(random_state)
     for i in range(n_permutations):
-        permuted_matrix2 = shuffle_rdm(matrix2, random_state=random_state)
+        permuted_matrix2 = shuffle_rdm(matrix2, rng=rng)
         perm_vec2 = standardize_rdms({'rdm2': permuted_matrix2})['rdm2']
         perm_corr, _ = spearmanr(vec1, perm_vec2)
         permuted_correlations[i] = float(perm_corr)  # type: ignore[arg-type]
