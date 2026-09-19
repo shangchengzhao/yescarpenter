@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://shangchengzhao.github.io/yescarpenter/</loc>
+         <lastmod>2026-09-19</lastmod>
+    </url>
+    <url>
+         <loc>https://shangchengzhao.github.io/yescarpenter/installation/</loc>
+         <lastmod>2026-09-19</lastmod>
+    </url>
+    <url>
+         <loc>https://shangchengzhao.github.io/yescarpenter/walkthrough/</loc>
+         <lastmod>2026-09-19</lastmod>
+    </url>
+    <url>
+         <loc>https://shangchengzhao.github.io/yescarpenter/reference/data-utils/</loc>
+         <lastmod>2026-09-19</lastmod>
+    </url>
+    <url>
+         <loc>https://shangchengzhao.github.io/yescarpenter/reference/pca/</loc>
+         <lastmod>2026-09-19</lastmod>
+    </url>
+    <url>
+         <loc>https://shangchengzhao.github.io/yescarpenter/reference/rdm/</loc>
+         <lastmod>2026-09-19</lastmod>
+    </url>
+    <url>
+         <loc>https://shangchengzhao.github.io/yescarpenter/reference/rsa/</loc>
+         <lastmod>2026-09-19</lastmod>
+    </url>
+    <url>
+         <loc>https://shangchengzhao.github.io/yescarpenter/reference/variance-partitioning/</loc>
+         <lastmod>2026-09-19</lastmod>
+    </url>
+</urlset>
