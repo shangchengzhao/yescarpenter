@@ -21,7 +21,9 @@ setup(
     install_requires=[
         "pandas",
         "numpy",
+        "scipy",
         "scikit-learn",
+        "statsmodels",
         "matplotlib",
         "seaborn"
     ],

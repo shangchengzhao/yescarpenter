@@ -9,16 +9,9 @@ import pandas as pd
 import statsmodels.api as sm
 
 def clean_data_df(df):
-    """Remove rows with NaN or inf values in DataFrame."""
     return df.replace([np.inf, -np.inf], np.nan).dropna()
 
 def clean_data_np(data):
-    """Remove rows with NaN or inf values in numpy array.
-
-    For a 1D array, individual non-finite elements are dropped. For arrays with
-    2 or more dimensions, any row (first axis) containing a non-finite value is
-    dropped, so the remaining axes keep their shape.
-    """
     data = np.asarray(data)
     finite = np.isfinite(data)
     if data.ndim > 1:
@@ -26,27 +19,12 @@ def clean_data_np(data):
     return data[finite]
 
 def get_triangular_matrix(full_rdm):
-    """Convert a full RDM to a triangular matrix (flattened upper triangle)."""
     return full_rdm[np.triu_indices(full_rdm.shape[0], k=1)]
 
 def calculate_r_squared_loss(full_model, reduced_model):
-    """Calculate R-squared loss between full and reduced models."""
     return full_model.rsquared - reduced_model.rsquared
 
 def standardize_rdms(rdm_dict):
-    """
-    Standardize each RDM to zero mean and unit variance using upper triangular values.
-    
-    Parameters:
-    -----------
-    rdm_dict : dict
-        Dictionary of {rdm_name: rdm_matrix}
-        
-    Returns:
-    --------
-    standardized : dict
-        Dictionary of {rdm_name: standardized_flattened_rdm}
-    """
     standardized = {}
     for name, rdm in rdm_dict.items():
         # Extract upper triangular part
@@ -65,24 +43,6 @@ def standardize_rdms(rdm_dict):
     return standardized
 
 def construct_RDM(data, n_target = None, method = "euclidean", draw = True, target_axis = 0):
-    '''
-    Input:
-        data: 2D matrix (DataFrame or numpy array). A 1D input is treated as n targets with 1 feature.
-        n_target: (optional) the expected number of targets. If given, it is only used to validate
-            the size of data along target_axis; a mismatch raises a ValueError.
-        method: the method to calculate the distance matrix
-            euclidean: Euclidean distance
-            cityblock: Manhattan distance
-            spearman: Spearman correlation
-            cosine: Cosine distance
-        draw: whether to draw the heatmap of the RDM
-        target_axis: which axis of data holds the targets
-            0: targets are rows (n_target x features)
-            1: targets are columns (features x n_target)
-            Ignored for 1D input.
-    Usage:
-        construct_RDM(data, n_target, method = "euclidean", target_axis = 0)
-    '''
     import numpy as np
     import pandas as pd
 
@@ -150,14 +110,6 @@ def construct_RDM(data, n_target = None, method = "euclidean", draw = True, targ
     return rdm
 
 def draw_heatmap(rdm, title = None, cmap = "viridis", cbar = True):
-    '''
-    Draw a heatmap of the RDM.
-    Input:
-        rdm: n x n matrix
-        title: title of the heatmap
-        cmap: colormap of the heatmap
-        cbar: whether to show the colorbar
-    '''
     # draw the heatmap
     plt.figure(figsize=(8, 6))
     sns.heatmap(rdm, cmap=cmap, cbar=cbar, square=True, annot=False)
@@ -167,22 +119,6 @@ def draw_heatmap(rdm, title = None, cmap = "viridis", cbar = True):
 
 
 def shuffle_rdm(rdm, random_state=None, rng = None):
-    """
-    Shuffle the rows and columns of a square RDM to create a null distribution.
-    
-    Parameters:
-    -----------
-    rdm : np.ndarray
-        Square distance matrix (RDM).
-    random_state : int or None
-        Random seed for reproducibility.
-    rng: random seed generator when performing permutation
-        
-    Returns:
-    --------
-    shuffled_rdm : np.ndarray
-        Shuffled RDM with the same shape as the input.
-    """
     n = rdm.shape[0]
     if rng is None:
         rng = np.random.default_rng(random_state)
@@ -192,29 +128,6 @@ def shuffle_rdm(rdm, random_state=None, rng = None):
     return shuffled_rdm
 
 def mantel_permutation(matrix1, matrix2, n_permutations=1000, random_state=None):
-    """
-    Perform Mantel permutations to calculate Spearman correlations.
-
-    Parameters:
-    -----------
-    matrix1 : np.ndarray
-        First distance matrix (square, symmetric).
-    matrix2 : np.ndarray
-        Second distance matrix (square, symmetric, same size as matrix1).
-    n_permutations : int
-        Number of permutations.
-    random_state : int or None
-        Random seed for reproducibility.
-
-    Returns:
-    --------
-    permuted_correlations : np.ndarray
-        Array of permuted Spearman correlation values.
-    observed_correlation : float
-        Observed Spearman correlation between original matrices.
-    p_value : float
-        P-value representing significance of the observed correlation.
-    """
 
     # Get the upper triangular indices, flatten, and standardize the matrices
     vecs = standardize_rdms({'rdm1': matrix1, 'rdm2':matrix2})
@@ -240,31 +153,6 @@ def mantel_permutation(matrix1, matrix2, n_permutations=1000, random_state=None)
     return permuted_correlations, observed_correlation, p_value
 
 def do_RSA(matrix1, matrix2, n_permutations=1000, random_state=None, plot_histogram=True):
-    """
-    Perform Mantel permutations to calculate Spearman correlations.
-
-    Parameters:
-    -----------
-    matrix1 : np.ndarray
-        First distance matrix (square, symmetric).
-    matrix2 : np.ndarray
-        Second distance matrix (square, symmetric, same size as matrix1).
-    n_permutations : int
-        Number of permutations.
-    random_state : int or None
-        Random seed for reproducibility.
-    plot_histogram : bool
-        Whether to plot the histogram of permutation results.
-
-    Returns:
-    --------
-    permuted_correlations : np.ndarray
-        Array of permuted Spearman correlation values.
-    observed_correlation : float
-        Observed Spearman correlation between original matrices.
-    p_value : float
-        P-value representing significance of the observed correlation.
-    """
     assert matrix1.shape == matrix2.shape, "Matrices must have the same dimensions"
     assert matrix1.shape[0] == matrix1.shape[1], "Matrices must be square"
 
@@ -279,9 +167,6 @@ def do_RSA(matrix1, matrix2, n_permutations=1000, random_state=None, plot_histog
     return permuted_correlations, observed_correlation, p_value
 
 def permutation_histogram(r, perm_r, perm_p = None):
-    '''
-    Plot the histogram of permutation results on a created figure.
-    '''
     # Filter out NaN or infinite values
     perm_r = perm_r[np.isfinite(perm_r)]
     
@@ -306,30 +191,10 @@ def permutation_histogram(r, perm_r, perm_p = None):
     plt.show()
 
 def maximal_permutation_test(data, iv_single, iv_multiplecomp, n_perm = 1000, method = "euclidean", random_state = None):
-    '''
-    This fuction is used to address multiple comparison, \
-        which provides an alternative of Bonferroni correction.
-    
-    - data: For IS-RSA, each row is a subject, while each column is a variable. \
-        For example, if you have 20 subjects and 5 variables, the shape of data is (20, 5).
-    - iv_single: the independent variable that will be shuffled and compare across iv_multiplecomp
-    - iv_multiplecomp: the independent variable that are inter-related and elicit the multiple comparison problem
-    - n_perm: number of permutation
-    - method: the method to calculate the distance matrix
-    - random_state: random seed for reproducibility
-
-    In each permutation, rdmS is shuffled once and the same shuffled RDM is correlated with \
-        the RDM of every iv in iv_multiplecomp; the maximum of these correlations forms the null distribution.
-
-    Returns:
-    - perm_r: null distribution of the maximal correlation (n_perm,)
-    - perm_p: dict of adjusted p-values, one for each iv in iv_multiplecomp
-    - observed_r: dict of observed correlations, one for each iv in iv_multiplecomp
-    '''
 
     # construct the RDM of iv_single (kept as a square matrix so that it can be shuffled)
     ivSarray = data[iv_single].values.reshape(-1, 1)
-    rdmS = construct_RDM(ivSarray, data.shape[0], method=method)
+    rdmS = construct_RDM(ivSarray, data.shape[0], method=method, draw=False)
     rdmS_f = standardize_rdms({'rdmS': rdmS})['rdmS']
 
     # construct the (flattened) RDM of each iv, and the observed correlation with rdmS_f
@@ -337,7 +202,7 @@ def maximal_permutation_test(data, iv_single, iv_multiplecomp, n_perm = 1000, me
     observed_r = {}
     for ivM in iv_multiplecomp:
         ivM_array = data[ivM].values.reshape(-1, 1)
-        rdmM = construct_RDM(ivM_array, data.shape[0], method=method)
+        rdmM = construct_RDM(ivM_array, data.shape[0], method=method, draw=False)
         rdmM_f_dict[ivM] = standardize_rdms({'rdmM': rdmM})['rdmM']
 
         r_result, _ = spearmanr(rdmS_f, rdmM_f_dict[ivM])
@@ -369,19 +234,6 @@ def maximal_permutation_test(data, iv_single, iv_multiplecomp, n_perm = 1000, me
     return [perm_r, perm_p, observed_r]
 
 def align_data(*data_inputs):
-    """
-    Align multiple datasets (NumPy arrays or Pandas DataFrames) based on shared row identifiers 
-    and valid (non-NA) rows.
-
-    Each input should be a dictionary with keys:
-        - 'data': a numpy array or pandas DataFrame
-        - 'order': list/array of row identifiers (required; must match rows in 'data')
-
-    Returns:
-        A list of aligned data objects (same type as original input), filtered to rows with:
-            - shared row identifiers
-            - no missing values across all datasets
-    """
     aligned_data = []
     index_lists = []
 
@@ -450,30 +302,6 @@ def align_data(*data_inputs):
     return aligned_data
 
 def variance_partitioning(DV_rdms, rdm_dict, plot_title='RDMs Contributions', print_results=False, colors=None):
-    """
-    Performs regression analysis to compare the contributions of multiple RDMs to dependent variable RDMs.
-
-    Parameters:
-    -----------
-    DV_rdms : dict
-        Dictionary of dependent variable RDMs {dv_name: rdm_matrix}
-    rdm_dict : dict
-        Dictionary of predictor RDMs {rdm_name: rdm_matrix}
-    plot_title : str, default='RDMs Contributions'
-        Title for the contribution plot
-    print_results : bool, default=False
-        Whether to print detailed regression summaries
-    colors : dict, optional
-        Mapping {rdm_name: color} for the bars in the contribution plot. Any matplotlib
-        color spec is accepted. Use the key 'Overlapped' to set the overlapped bar color
-        (default gray). Predictors not in the mapping get colors from the matplotlib
-        default color cycle.
-        
-    Returns:
-    --------
-    results_df : pandas.DataFrame
-        DataFrame with R-squared results and contributions
-    """
     # Check for empty inputs
     if not DV_rdms:
         raise ValueError("DV_rdms cannot be empty")
@@ -541,12 +369,6 @@ def variance_partitioning(DV_rdms, rdm_dict, plot_title='RDMs Contributions', pr
     return results_df
 
 def _plot_variance_contributions(results_df, rdm_names, plot_title, colors=None):
-    """
-    Helper function to plot variance contribution results.
-
-    colors : dict, optional
-        {rdm_name: color}; 'Overlapped' key sets the overlapped bar color.
-    """
     bottom = np.zeros(len(results_df))
     x = np.arange(len(results_df))
 

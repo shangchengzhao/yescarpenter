@@ -1,0 +1,39 @@
+site_name: yescarpenter
+site_description: Frequently used data-analysis functions for YESlab members and other researchers
+repo_url: https://github.com/shangchengzhao/yescarpenter
+repo_name: shangchengzhao/yescarpenter
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Walkthrough: walkthrough.md
+  - Reference:
+      - PCA: reference/pca.md
+      - RDM construction: reference/rdm.md
+      - RSA and permutation tests: reference/rsa.md
+      - Variance partitioning: reference/variance-partitioning.md
+      - Data utilities: reference/data-utils.md
