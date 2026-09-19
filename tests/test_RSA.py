@@ -112,9 +112,35 @@ class TestConstructRDM:
     def test_construct_rdm_transposed_data(self):
         """Test RDM construction when data needs to be transposed"""
         transposed_data = self.test_data.T  # Shape will be (2, 3)
-        rdm = construct_RDM(transposed_data, self.n_target, method="euclidean", draw=False)
+        rdm = construct_RDM(transposed_data, self.n_target, method="euclidean", draw=False, target_axis=1)
         
         assert rdm.shape == (3, 3), f"Expected shape (3, 3), got {rdm.shape}"
+        expected = construct_RDM(self.test_data, self.n_target, method="euclidean", draw=False)
+        assert np.allclose(rdm, expected), "target_axis=1 should match the un-transposed input"
+
+    def test_construct_rdm_wrong_target_axis(self):
+        """Transposed data without target_axis=1 should fail validation, not be auto-transposed"""
+        with pytest.raises(ValueError, match="Check n_target and target_axis"):
+            construct_RDM(self.test_data.T, self.n_target, method="euclidean", draw=False)
+
+    def test_construct_rdm_square_data_respects_target_axis(self):
+        """Square input is unambiguous: target_axis decides the orientation"""
+        square = np.array([[0., 1., 2.], [3., 5., 8.], [1., 1., 9.]])
+        rows = construct_RDM(square, 3, draw=False, target_axis=0)
+        cols = construct_RDM(square, 3, draw=False, target_axis=1)
+        assert np.allclose(rows, cdist(square, square))
+        assert np.allclose(cols, cdist(square.T, square.T))
+        assert not np.allclose(rows, cols)
+
+    def test_construct_rdm_n_target_optional(self):
+        """n_target may be omitted"""
+        rdm = construct_RDM(self.test_data, draw=False)
+        assert rdm.shape == (3, 3)
+
+    def test_construct_rdm_invalid_target_axis(self):
+        """target_axis must be 0 or 1"""
+        with pytest.raises(ValueError, match="target_axis must be"):
+            construct_RDM(self.test_data, 3, draw=False, target_axis=2)
     
     def test_construct_rdm_invalid_method(self):
         """Test error handling for invalid method"""
@@ -123,7 +149,7 @@ class TestConstructRDM:
     
     def test_construct_rdm_wrong_dimensions(self):
         """Test error handling for wrong number of targets"""
-        with pytest.raises(ValueError, match="does not have"):
+        with pytest.raises(ValueError, match="Expected 5 valid targets"):
             construct_RDM(self.test_data, 5, method="euclidean", draw=False)  # Wrong n_target
     
     def test_construct_rdm_3d_data_error(self):

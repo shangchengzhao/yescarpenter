@@ -88,7 +88,8 @@ This function removes rows containing NaN or infinite values from a numpy array,
     Returns:
     --------
     numpy.ndarray
-        Cleaned array with NaN and infinite values removed
+        Cleaned array. For 1D input, non-finite elements are dropped; for 2D+
+        input, rows containing any NaN or infinite value are dropped.
     """
 
 ### get_triangular_matrix
@@ -132,7 +133,7 @@ This function standardizes RDMs to zero mean and unit variance using their upper
 ### construct_RDM
 This function constructs a Representational Dissimilarity Matrix (RDM) from data using various distance metrics.
 
-**def construct_RDM(data, n_target, method="euclidean", draw=True):**
+**def construct_RDM(data, n_target=None, method="euclidean", draw=True, target_axis=0):**
 
     """
     Construct a Representational Dissimilarity Matrix (RDM) from data.
@@ -140,13 +141,17 @@ This function constructs a Representational Dissimilarity Matrix (RDM) from data
     Parameters:
     -----------
     data : array-like
-        Input data where each row is a stimulus/target and each column is a feature
-    n_target : int
-        Expected number of targets/stimuli in the data
+        2D input data. A 1D input is treated as n targets with a single feature.
+    n_target : int, optional
+        Expected number of (valid) targets/stimuli. Only used for validation:
+        a ValueError is raised if it does not match the data.
     method : str, default="euclidean"
         Distance metric to use ('euclidean', 'cityblock', 'cosine', 'spearman')
     draw : bool, default=True
         Whether to display a heatmap of the resulting RDM
+    target_axis : {0, 1}, default=0
+        Axis of `data` that holds the targets. 0: rows are targets (targets x features);
+        1: columns are targets (features x targets). Ignored for 1D input.
         
     Returns:
     --------
@@ -162,6 +167,9 @@ from yescarpenter import construct_RDM
 data = np.random.rand(10, 5)  # 10 pictures, 5 ratings
 n_target = 10
 rdm = construct_RDM(data, n_target, method="euclidean")
+
+# If the targets are the columns (features x targets), say so explicitly
+rdm = construct_RDM(data.T, n_target, method="euclidean", target_axis=1)
 ```
 
 ### draw_heatmap
@@ -187,25 +195,6 @@ This function creates a heatmap visualization of an RDM or any square matrix.
     --------
     None
         Displays the heatmap plot
-    """
-
-### convert_RDM_to_vector
-This function converts a square RDM to a vector by extracting the lower triangular part (excluding diagonal).
-
-**def convert_RDM_to_vector(rdm):**
-
-    """
-    Convert a square RDM to a vector by removing the upper triangle.
-    
-    Parameters:
-    -----------
-    rdm : numpy.ndarray
-        Square RDM matrix
-        
-    Returns:
-    --------
-    numpy.ndarray
-        1D vector of length n*(n-1)/2 containing lower triangular values
     """
 
 ### shuffle_rdm
@@ -255,8 +244,11 @@ This function performs Mantel permutation tests to assess the statistical signif
     observed_correlation : float
         Observed Spearman correlation between original matrices
     p_value : float
-        P-value representing significance of the observed correlation
+        One-tailed (right-tail) permutation p-value; see the note below
     """
+
+**Assumption: the p-value is one-tailed.** It is computed as `p = (sum(permuted_correlations >= observed_correlation) + 1) / (n_permutations + 1)`, i.e. the proportion of permutations (counting the observed one) whose correlation is at least as large as the observed correlation. This tests only for a *positive* correspondence between the two RDMs. A strong negative correlation yields a p-value close to 1, not a small one. No two-tailed option is currently exposed. If you need one, compare `abs(permuted_correlations) >= abs(observed_correlation)` using the returned `permuted_correlations` and `observed_correlation`.
+
 
 ### do_RSA
 This function calculates the Spearman correlation between two RDMs and performs Mantel permutation testing to assess statistical significance.
@@ -286,8 +278,11 @@ This function calculates the Spearman correlation between two RDMs and performs 
     observed_correlation : float
         Observed Spearman correlation between original matrices
     p_value : float
-        P-value representing significance of the observed correlation
+        One-tailed (right-tail) permutation p-value; see the note below
     """
+
+**Note:** as in `mantel_permutation`, the returned `p_value` is one-tailed (right-tail) and only tests for a positive correspondence between the RDMs. See the assumption above.
+
 
 Usage:
 
@@ -329,7 +324,7 @@ permutation_histogram(r, perm_r)
 ### maximal_permutation_test
 This function addresses multiple comparison problems by using the maximal statistic approach, providing an alternative to Bonferroni correction.
 
-**def maximal_permutation_test(data, iv_single, iv_multiplecomp, n_perm=1000, method="euclidean"):**
+**def maximal_permutation_test(data, iv_single, iv_multiplecomp, n_perm=1000, method="euclidean", random_state=None):**
 
     """
     Perform maximal permutation test for multiple comparison correction.
@@ -346,13 +341,15 @@ This function addresses multiple comparison problems by using the maximal statis
         Number of permutations
     method : str, default="euclidean"
         Distance metric for RDM construction
+    random_state : int or None
+        Random seed for reproducibility
         
     Returns:
     --------
     perm_r : numpy.ndarray
         Array of maximal permuted correlation values
-    perm_p : float
-        P-value from maximal permutation test
+    perm_p : dict
+        Adjusted p-value for each variable in iv_multiplecomp
     observed_r : dict
         Dictionary of observed correlations for each comparison
     """
@@ -380,7 +377,7 @@ This function aligns different sources of data based on shared identifiers, hand
     *data_inputs : dict
         Variable number of dictionaries, each containing:
         - 'data': numpy array or pandas DataFrame
-        - 'order': list/array of row identifiers matching the data rows
+        - 'order': list/array of row identifiers matching the data rows (required)
         
     Returns:
     --------

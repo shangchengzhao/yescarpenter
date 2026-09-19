@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.stats import spearmanr
 from scipy.spatial.distance import cdist, pdist
+import itertools
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
@@ -11,9 +13,17 @@ def clean_data_df(df):
     return df.replace([np.inf, -np.inf], np.nan).dropna()
 
 def clean_data_np(data):
-    """Remove NaN or inf values in numpy array."""
-    data = np.where(np.isfinite(data), data, np.nan)
-    return data[~np.isnan(data)]
+    """Remove rows with NaN or inf values in numpy array.
+
+    For a 1D array, individual non-finite elements are dropped. For arrays with
+    2 or more dimensions, any row (first axis) containing a non-finite value is
+    dropped, so the remaining axes keep their shape.
+    """
+    data = np.asarray(data)
+    finite = np.isfinite(data)
+    if data.ndim > 1:
+        finite = finite.reshape(data.shape[0], -1).all(axis=1)
+    return data[finite]
 
 def get_triangular_matrix(full_rdm):
     """Convert a full RDM to a triangular matrix (flattened upper triangle)."""
@@ -54,19 +64,24 @@ def standardize_rdms(rdm_dict):
         standardized[name] = flat_std
     return standardized
 
-def construct_RDM(data, n_target, method = "euclidean", draw = True):
+def construct_RDM(data, n_target = None, method = "euclidean", draw = True, target_axis = 0):
     '''
     Input:
-        data: n x m matrix (DataFrame or numpy array), where n is the number of target and m is the number of features
-        n_target: the number of target
+        data: 2D matrix (DataFrame or numpy array). A 1D input is treated as n targets with 1 feature.
+        n_target: (optional) the expected number of targets. If given, it is only used to validate
+            the size of data along target_axis; a mismatch raises a ValueError.
         method: the method to calculate the distance matrix
             euclidean: Euclidean distance
             cityblock: Manhattan distance
             spearman: Spearman correlation
             cosine: Cosine distance
         draw: whether to draw the heatmap of the RDM
+        target_axis: which axis of data holds the targets
+            0: targets are rows (n_target x features)
+            1: targets are columns (features x n_target)
+            Ignored for 1D input.
     Usage:
-        construct_RDM(data, n_target, method = "euclidean")
+        construct_RDM(data, n_target, method = "euclidean", target_axis = 0)
     '''
     import numpy as np
     import pandas as pd
@@ -84,28 +99,29 @@ def construct_RDM(data, n_target, method = "euclidean", draw = True):
     else:
         data = np.asarray(data)
     
-    # Convert to 2D array if needed
+    if target_axis not in (0, 1):
+        raise ValueError(f"target_axis must be 0 (targets are rows) or 1 (targets are columns), got {target_axis!r}")
+
+    # Convert to 2D array (targets x features)
     if data.ndim == 1:
         data = data.reshape(-1, 1)  # make it (n_samples, 1) if it's a flat vector
-    elif data.ndim > 2:
+    elif data.ndim == 2:
+        if target_axis == 1:
+            data = data.T
+    else:
         raise ValueError(f"Data must be 1D or 2D, got {data.ndim}D array")
 
-    # Remove rows with NaN or inf values
-    if np.any(np.isnan(data)) or np.any(np.isinf(data)):
-        # Find rows with any NaN or inf values
-        invalid_rows = np.any(np.isnan(data) | np.isinf(data), axis=1)
+    # Remove targets (rows) with NaN or inf values
+    if not np.all(np.isfinite(data)):
+        invalid_rows = ~np.isfinite(data).all(axis=1)
         data = data[~invalid_rows]
-        print(f"Removed {np.sum(invalid_rows)} rows containing NaN or inf values")
+        print(f"Removed {np.sum(invalid_rows)} targets (rows) containing NaN or inf values")
 
-    # Ensure shape is (n_target, features)
-    if data.shape[0] == n_target:
-        pass
-    elif data.shape[1] == n_target:
-        data = data.T
-    else:
+    # Validate the number of (valid) targets
+    if n_target is not None and data.shape[0] != n_target:
         raise ValueError(
-            f'The input data does not have {n_target} non-NaN observations. '
-            f'After cleaning, it has {data.shape[0]} rows and {data.shape[1]} columns.'
+            f"Expected {n_target} valid targets along axis {target_axis}, but found {data.shape[0]} "
+            f"after removing non-finite targets. Check n_target and target_axis."
         )
 
     # Calculate RDM based on method
@@ -289,7 +305,7 @@ def permutation_histogram(r, perm_r, perm_p = None):
     # ax.set_title('Permutation distribution', fontsize=22)
     plt.show()
 
-def maximal_permutation_test(data, iv_single, iv_multiplecomp, n_perm = 1000, method = "euclidean"):
+def maximal_permutation_test(data, iv_single, iv_multiplecomp, n_perm = 1000, method = "euclidean", random_state = None):
     '''
     This fuction is used to address multiple comparison, \
         which provides an alternative of Bonferroni correction.
@@ -300,47 +316,55 @@ def maximal_permutation_test(data, iv_single, iv_multiplecomp, n_perm = 1000, me
     - iv_multiplecomp: the independent variable that are inter-related and elicit the multiple comparison problem
     - n_perm: number of permutation
     - method: the method to calculate the distance matrix
+    - random_state: random seed for reproducibility
+
+    In each permutation, rdmS is shuffled once and the same shuffled RDM is correlated with \
+        the RDM of every iv in iv_multiplecomp; the maximum of these correlations forms the null distribution.
+
+    Returns:
+    - perm_r: null distribution of the maximal correlation (n_perm,)
+    - perm_p: dict of adjusted p-values, one for each iv in iv_multiplecomp
+    - observed_r: dict of observed correlations, one for each iv in iv_multiplecomp
     '''
 
-    # construct the RDMs
-    # convert the data into array
+    # construct the RDM of iv_single (kept as a square matrix so that it can be shuffled)
     ivSarray = data[iv_single].values.reshape(-1, 1)
     rdmS = construct_RDM(ivSarray, data.shape[0], method=method)
-
-    # remove the upper triangle
     rdmS_f = standardize_rdms({'rdmS': rdmS})['rdmS']
 
-    # observed_r: dictionary to store the observed correlation
+    # construct the (flattened) RDM of each iv, and the observed correlation with rdmS_f
+    rdmM_f_dict = {}
     observed_r = {}
     for ivM in iv_multiplecomp:
-        # Construct the RDM for the independent variable component ivM.
         ivM_array = data[ivM].values.reshape(-1, 1)
         rdmM = construct_RDM(ivM_array, data.shape[0], method=method)
-        rdmM_f = standardize_rdms({'rdmM': rdmM})['rdmM']
+        rdmM_f_dict[ivM] = standardize_rdms({'rdmM': rdmM})['rdmM']
 
-        # Compute the observed correlation between rdmS_f and rdmM_f.
-        r_result, _ = spearmanr(rdmS_f, rdmM_f)
+        r_result, _ = spearmanr(rdmS_f, rdmM_f_dict[ivM])
         observed_r[ivM] = float(r_result)  # type: ignore[arg-type]
 
-    perm_r = np.zeros(n_perm)    
+    perm_r = np.zeros(n_perm)
+    rng = np.random.default_rng(random_state)
     for iperm in range(n_perm):
-        # define the max r
-        max_r_null = -np.inf
+        # shuffle rdmS once, shared by all the comparisons in this permutation
+        perm_rdmS_f = standardize_rdms({'rdmS': shuffle_rdm(rdmS, rng=rng)})['rdmS']
 
+        max_r_null = -np.inf
         for ivM in iv_multiplecomp:
-            # calculate the psudo correlation
-            r_result, _ = spearmanr(shuffle_rdm(rdmS_f), rdmM_f)
+            r_result, _ = spearmanr(perm_rdmS_f, rdmM_f_dict[ivM])
             r = float(r_result)  # type: ignore[arg-type]
 
             # update the max r
             if r > max_r_null:
                 max_r_null = r
-            
+
         perm_r[iperm] = max_r_null
-            
-    # calculate the p-value
-    perm_p = float(np.sum(perm_r > observed_r[ivM]) / n_perm)
-    print(f"p = {np.sum(perm_r > observed_r[ivM])} / {n_perm}")
+
+    # adjusted p-value for each iv, aligned with mantel_permutation
+    perm_p = {}
+    for ivM in iv_multiplecomp:
+        perm_p[ivM] = float((np.sum(perm_r >= observed_r[ivM]) + 1) / (n_perm + 1))
+        print(f"{ivM}: r = {observed_r[ivM]:.3f}, adjusted p = {perm_p[ivM]:.4f}")
 
     return [perm_r, perm_p, observed_r]
 
@@ -351,7 +375,7 @@ def align_data(*data_inputs):
 
     Each input should be a dictionary with keys:
         - 'data': a numpy array or pandas DataFrame
-        - 'order': optional list/array of row identifiers (must match rows in 'data')
+        - 'order': list/array of row identifiers (required; must match rows in 'data')
 
     Returns:
         A list of aligned data objects (same type as original input), filtered to rows with:
@@ -390,8 +414,8 @@ def align_data(*data_inputs):
         index = index_lists[i]
 
         if isinstance(data, pd.DataFrame):
-            data.index = index
-            aligned = data.loc[shared_index].copy()
+            # relabel a copy so the caller's DataFrame keeps its original index
+            aligned = data.set_axis(index, axis=0).loc[shared_index].copy()
             aligned_data.append(aligned)
         elif isinstance(data, np.ndarray):
             if data.ndim == 1:
@@ -425,7 +449,7 @@ def align_data(*data_inputs):
 
     return aligned_data
 
-def variance_partitioning(DV_rdms, rdm_dict, plot_title='RDMs Contributions', print_results=False):
+def variance_partitioning(DV_rdms, rdm_dict, plot_title='RDMs Contributions', print_results=False, colors=None):
     """
     Performs regression analysis to compare the contributions of multiple RDMs to dependent variable RDMs.
 
@@ -439,6 +463,11 @@ def variance_partitioning(DV_rdms, rdm_dict, plot_title='RDMs Contributions', pr
         Title for the contribution plot
     print_results : bool, default=False
         Whether to print detailed regression summaries
+    colors : dict, optional
+        Mapping {rdm_name: color} for the bars in the contribution plot. Any matplotlib
+        color spec is accepted. Use the key 'Overlapped' to set the overlapped bar color
+        (default gray). Predictors not in the mapping get colors from the matplotlib
+        default color cycle.
         
     Returns:
     --------
@@ -507,37 +536,33 @@ def variance_partitioning(DV_rdms, rdm_dict, plot_title='RDMs Contributions', pr
                                results_df[[f'{name} Exclusive Contribution' for name in rdm_names]].sum(axis=1))
 
     # Plotting
-    _plot_variance_contributions(results_df, rdm_names, plot_title)
+    _plot_variance_contributions(results_df, rdm_names, plot_title, colors)
 
     return results_df
 
-def _plot_variance_contributions(results_df, rdm_names, plot_title):
+def _plot_variance_contributions(results_df, rdm_names, plot_title, colors=None):
     """
     Helper function to plot variance contribution results.
+
+    colors : dict, optional
+        {rdm_name: color}; 'Overlapped' key sets the overlapped bar color.
     """
     bottom = np.zeros(len(results_df))
     x = np.arange(len(results_df))
 
-    # Define consistent colors for RDMs
-    rdm_colors = {
-        'Conceptual': '#1f77b4',  # Blue
-        'Physical': '#2ca02c',    # Green
-        'Overlapped': '#CCCCCC',  # Gray
-        'Static Facial': '#81c784',
-    }
+    colors = dict(colors) if colors else {}
+    overlap_color = colors.get('Overlapped', '#CCCCCC')
 
-    # Prepare color cycle for additional RDMs
-    color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    used_colors = set(rdm_colors.values())
-    color_iter = (c for c in color_cycle if c.lower() not in [col.lower() for col in used_colors])
+    # Fall back to the default color cycle for predictors without a supplied color.
+    # to_hex normalizes tuple/hex/named colors so they can be compared safely.
+    user_hex = {mcolors.to_hex(c).lower() for c in colors.values()}
+    user_hex.add(mcolors.to_hex(overlap_color).lower())
+    cycle = [mcolors.to_hex(c) for c in plt.rcParams['axes.prop_cycle'].by_key()['color']]
+    free_colors = [c for c in cycle if c.lower() not in user_hex] or cycle
+    color_iter = itertools.cycle(free_colors)
 
-    # Assign colors to all RDMs
-    assigned_colors = {}
-    for name in rdm_names:
-        if name in rdm_colors:
-            assigned_colors[name] = rdm_colors[name]
-        else:
-            assigned_colors[name] = next(color_iter, '#1f77b4')  # Default to blue if cycle exhausted
+    assigned_colors = {name: colors[name] if name in colors else next(color_iter)
+                       for name in rdm_names}
 
     # Plot exclusive contributions
     for name in rdm_names:
@@ -548,7 +573,7 @@ def _plot_variance_contributions(results_df, rdm_names, plot_title):
 
     # Plot overlapped contribution
     plt.bar(x, results_df['Overlapped'], label='Overlapped', 
-            color=assigned_colors.get('Overlapped', '#CCCCCC'), 
+            color=overlap_color, 
             alpha=0.6, bottom=bottom)
 
     # Formatting
