@@ -99,7 +99,7 @@ share one diverging color scale, so colors are comparable across panels.
 Returns `None`; displays the figure.
 
 !!! warning "Limitations"
-    - At least two components are required. With a single component the function
-      raises `TypeError: 'Axes' object is not iterable`.
+    - The bars are labeled with the column names of `df`, and the figure size is fixed
+      (15 x 6 inches), so many components or many variables get crowded.
     - The call `sns.set(style="whitegrid")` changes seaborn and matplotlib styling for
       the rest of the session.

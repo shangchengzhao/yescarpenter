@@ -1,6 +1,6 @@
 # yescarpenter
 
-yescarpenter collects the analysis functions that YESlab members use most often, so
+**yescarpenter** collects the analysis functions that YESlab members use most often, so
 they can be imported instead of copied between notebooks. It currently covers two areas:
 
 | Area | What it does | Functions |
@@ -14,7 +14,7 @@ Every function is importable from the top-level package:
 from yescarpenter import perform_pca, construct_RDM, do_RSA
 ```
 
-## Where to go next
+## To start
 
 - [Installation](installation.md): install from PyPI or from source.
 - [Walkthrough](walkthrough.md): a PCA example and an RSA example from start to finish.
