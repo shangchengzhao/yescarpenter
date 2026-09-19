@@ -45,12 +45,12 @@ A stacked bar chart (one bar per dependent RDM) is then displayed.
 
 Raises `ValueError` if either dictionary is empty or contains an empty or `None` matrix.
 
-!!! Note: Descriptive, not inferential
+!!! note "Descriptive, not inferential"
     The result of this analysis is more descriptive than a strict statistical test. The
     R² values and exclusive contributions summarize how the predictor RDMs account for the
     dependent RDM in your data; they do not come with a formal test of significance.
 
-!!! Caution when interpreting the p-values
+!!! warning "Caution when interpreting the p-values"
     The p-values come from ordinary regression, which treats the cells of an RDM as
     independent observations. They are not, because every target contributes to many
     cells. Treat them as descriptive; use a permutation test such as

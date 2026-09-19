@@ -5,8 +5,7 @@ Frequently used data-analysis functions for [YESlab](https://yeslab.psych.ucsb.e
 1. principal component analysis with visualization and 
 2. representational similarity analysis (RSA) with data-cleaning helpers
 
-Full documentation, with the parameters and caveats of every function, lives in the
-[`docs/`](docs/index.md) folder and is built with MkDocs (see [Documentation](#documentation)).
+To read the full documentation, with the parameters and caveats of every function, go to [yescarpenter documentation](https://shangchengzhao.github.io/yescarpenter/)
 
 ## Installation
 
