@@ -1,4 +1,5 @@
 # yescarpenter
+![yescarpenter banner](yescarpenter_banner.png)
 
 Frequently used data-analysis functions for [YESlab](https://yeslab.psych.ucsb.edu/) members and other social neuroscience researchers, including:
 1. principal component analysis with visualization and 
