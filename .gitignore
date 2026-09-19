@@ -1,3 +1,9 @@
+# note
+PROJECT_NOTE.md
+
+# packaging tools
+*.egg-info
+
 # macOS
 .DS_Store
 .AppleDouble
